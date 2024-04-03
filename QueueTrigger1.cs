@@ -1,3 +1,4 @@
+using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues.Models;
 using Microsoft.Azure.Functions.Worker;
@@ -22,5 +23,12 @@ public class QueueTrigger1
         await ordersContainer.CreateIfNotExistsAsync();
         var blobClient = ordersContainer.GetBlobClient($"{message.MessageId}.txt");
         await blobClient.UploadAsync(new BinaryData(message.MessageText));
+    }
+
+    [Function(nameof(ServiceBusQueueTrigger))]
+    public void ServiceBusQueueTrigger([ServiceBusTrigger("orders", Connection = "ServiceBusConnection")] 
+        ServiceBusReceivedMessage message)
+    {
+        _logger.LogInformation($"Received a message {message.Body} from the Service Bus queue");
     }
 }

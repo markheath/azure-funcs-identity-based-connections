@@ -4,7 +4,7 @@ $resourceGroupName = "mrh-funcs-identity"
 $location = "westeurope"
 $functionAppName = "mrh-funcs-identity-01"
 $storageAccountName = "mrhfuncsidentity01"
-$serviceBusNamespace = "myServiceBusNamespace"
+$serviceBusNamespace = "mrhfuncsidentity01"
 
 az account set --subscription $subscription
 
@@ -97,5 +97,70 @@ $status = Invoke-RestMethod -Uri $response.statusQueryGetUri -Method Get
 $status.runtimeStatus
 $status.output
 
+# Create Azure Service Bus Namespace
+az servicebus namespace create `
+    --name $serviceBusNamespace `
+    --resource-group $resourceGroupName `
+    --location $location
+
+# Create a queue
+az servicebus queue create --name "orders" `
+    --namespace-name $serviceBusNamespace `
+    --resource-group $resourceGroupName
+
+# Create a topic
+# az servicebus topic create --name "myTopic" --namespace-name $serviceBusNamespace --resource-group $resourceGroupName
+
+# Create a subscription for the topic
+# az servicebus topic subscription create --name "mySubscription" --topic-name "myTopic" --namespace-name $serviceBusNamespace --resource-group $resourceGroupName
+
+$serviceBusNamespaceId = az servicebus namespace show `
+    --name $serviceBusNamespace `
+    --resource-group $resourceGroupName `
+    --query id `
+    --output tsv
+
+
 # Grant managed identity access to the Azure Service Bus namespace
-# az role assignment create --role "Azure Service Bus Data Sender" --assignee $principalId --scope "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ServiceBus/namespaces/{serviceBusNamespace}"
+az role assignment create `
+    --role "Azure Service Bus Data Sender" `
+    --assignee $principalId `
+    --scope $serviceBusNamespaceId
+
+# Grant managed identity ability to receive messages from Azure Service Bus namespace
+az role assignment create `
+    --role "Azure Service Bus Data Receiver" `
+    --assignee $principalId `
+    --scope $serviceBusNamespaceId
+
+# get the service bus fully qualified namespace
+$serviceBusNamespaceFqdn = az servicebus namespace show `
+    --name $serviceBusNamespace `
+    --resource-group $resourceGroupName `
+    --query serviceBusEndpoint `
+    --output tsv
+
+# get the domain name only from a URL
+$serviceBusNamespaceDomain = [System.Uri]::new($serviceBusNamespaceFqdn).Host
+
+# set up the managed identity connection to service bus
+# As explained here: https://learn.microsoft.com/en-us/dotnet/api/overview/azure/microsoft.azure.webjobs.extensions.servicebus-readme?view=azure-dotnet#identity-based-authentication
+az functionapp config appsettings set `
+    --name $functionAppName `
+    --resource-group $resourceGroupName `
+    --settings ServiceBusConnection__fullyQualifiedNamespace=${serviceBusNamespaceDomain}
+
+# get the service bus connection string (for your local.settings.json file)
+$serviceBusConnectionString = az servicebus namespace authorization-rule keys list `
+    --name RootManageSharedAccessKey `
+    --namespace-name $serviceBusNamespace `
+    --resource-group $resourceGroupName `
+    --query primaryConnectionString `
+    --output tsv
+
+# get the function invocation key
+$functionKey = az functionapp keys list `
+    --name $functionAppName `
+    --resource-group $resourceGroupName `
+    --query "functionKeys.default" `
+    --output tsv

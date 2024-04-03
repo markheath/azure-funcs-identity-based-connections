@@ -1,5 +1,16 @@
 # Functions app to test Identity Based Connections
 
+## Creating your local.settings.json
+
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "ServiceBusConnection": "a connection string to a service bus namespace",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
+    }
+}
+
 ## Useful links
 
 - https://learn.microsoft.com/en-us/azure/azure-functions/functions-identity-based-connections-tutorial
