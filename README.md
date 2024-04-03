@@ -1,7 +1,12 @@
 # Functions app to test Identity Based Connections
 
+This function app uses managed identities to access a storage account and an Azure Service Bus namespace.
+
 ## Creating your local.settings.json
 
+You need to create a local.settings.json file in order to test this locally. Note that locally I'm not bothering with identity based connections, they are only used when deploying to Azure.
+
+```json
 {
     "IsEncrypted": false,
     "Values": {
@@ -10,8 +15,15 @@
         "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
     }
 }
+```
+
+## Deploying to Azure
+
+The `deploy.ps1` script guides you through the steps to deploy this to Azure and test it out. Note that you'll probably need to make a few changes to names of resources to deploy this yourself - it's not intended to be run in one go.
 
 ## Useful links
+
+Articles I found helpful when building this sample.
 
 - https://learn.microsoft.com/en-us/azure/azure-functions/functions-identity-based-connections-tutorial
 - https://learn.microsoft.com/en-us/azure/azure-functions/functions-identity-based-connections-tutorial-2
