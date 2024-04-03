@@ -86,11 +86,18 @@ az functionapp config appsettings set `
 # publish the function app
 func azure functionapp publish $functionAppName
 
-# invoke web request to the create-order function
-Invoke-WebRequest -Uri "https://$functionAppName.azurewebsites.net/api/createorder"
+# get the function invocation key
+$functionKey = az functionapp keys list `
+    --name $functionAppName `
+    --resource-group $resourceGroupName `
+    --query "functionKeys.default" `
+    --output tsv
 
-# kick off the durable functions
-$url = "https://$functionAppName.azurewebsites.net/api/startneworderprocess"
+# invoke web request to the create-order function
+Invoke-WebRequest -Uri "https://$functionAppName.azurewebsites.net/api/createorder?code=$functionKey"
+
+# kick off the durable functions workflow
+$url = "https://$functionAppName.azurewebsites.net/api/startneworderprocess?code=$functionKey"
 $response = Invoke-RestMethod -Uri $url -Method Get
 # check on the progress
 $status = Invoke-RestMethod -Uri $response.statusQueryGetUri -Method Get
@@ -158,9 +165,5 @@ $serviceBusConnectionString = az servicebus namespace authorization-rule keys li
     --query primaryConnectionString `
     --output tsv
 
-# get the function invocation key
-$functionKey = az functionapp keys list `
-    --name $functionAppName `
-    --resource-group $resourceGroupName `
-    --query "functionKeys.default" `
-    --output tsv
+# invoke web request to the service bus test function
+Invoke-WebRequest -Uri "https://$functionAppName.azurewebsites.net/api/servicebustest?code=$functionKey"

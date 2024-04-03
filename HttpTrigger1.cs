@@ -14,7 +14,7 @@ public class HttpTrigger1
 
     [Function(nameof(CreateOrder))]
     public async Task<CreateOrderResponse> CreateOrder(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
     {
         _logger.LogInformation("Created an order.");
 
@@ -27,7 +27,7 @@ public class HttpTrigger1
 
     [Function(nameof(ServiceBusTest))]
     public async Task<ServiceBusTestResponse> ServiceBusTest(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
     {
         _logger.LogInformation("Going to send a service bus message.");
 
