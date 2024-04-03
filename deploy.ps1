@@ -81,6 +81,21 @@ az functionapp config appsettings set `
     --resource-group $resourceGroupName `
     --settings AzureWebJobsStorage__accountName=${storageAccountName}
 
+# to see settings az functionapp config appsettings list -n $functionAppName -g $resourceGroupName
+
+# publish the function app
+func azure functionapp publish $functionAppName
+
+# invoke web request to the create-order function
+Invoke-WebRequest -Uri "https://$functionAppName.azurewebsites.net/api/createorder"
+
+# kick off the durable functions
+$url = "https://$functionAppName.azurewebsites.net/api/startneworderprocess"
+$response = Invoke-RestMethod -Uri $url -Method Get
+# check on the progress
+$status = Invoke-RestMethod -Uri $response.statusQueryGetUri -Method Get
+$status.runtimeStatus
+$status.output
 
 # Grant managed identity access to the Azure Service Bus namespace
 # az role assignment create --role "Azure Service Bus Data Sender" --assignee $principalId --scope "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ServiceBus/namespaces/{serviceBusNamespace}"
