@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "funcs_identity_connections_test": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7026",
+      "launchBrowser": false
+    }
+  }
+}
