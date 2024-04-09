@@ -1,6 +1,6 @@
 # Functions app to test Identity Based Connections
 
-This function app uses managed identities to access a storage account and an Azure Service Bus namespace.
+This function app uses managed identities to access a storage account (both the AzureWebJobStorage account and a separate one called StorageAccount2) and an Azure Service Bus namespace.
 
 ## Creating your local.settings.json
 
@@ -11,6 +11,7 @@ You need to create a local.settings.json file in order to test this locally. Not
     "IsEncrypted": false,
     "Values": {
         "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "StorageAccount2": "UseDevelopmentStorage=true",
         "ServiceBusConnection": "a connection string to a service bus namespace",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
     }
@@ -20,6 +21,14 @@ You need to create a local.settings.json file in order to test this locally. Not
 ## Deploying to Azure
 
 The `deploy.ps1` script guides you through the steps to deploy this to Azure and test it out. Note that you'll probably need to make a few changes to names of resources to deploy this yourself - it's not intended to be run in one go.
+
+## Testing
+
+When you call the CreateOrder endpoint, it will send a storage queue message, and that will trigger two blobs being created in each of the storage accounts. Those will in turn trigger two blob-triggered Functions.
+
+When you call the ServiceBusTest endpoint, it will send a ServiceBus message, which will trigger the ServiceBusQueueTrigger function.
+
+And the `StartNewOrderProcess` endpoint triggers a simple durable functions orchestration.
 
 ## Useful links
 

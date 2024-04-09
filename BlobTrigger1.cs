@@ -19,4 +19,13 @@ public class BlobTrigger1
         var content = await blobStreamReader.ReadToEndAsync();
         _logger.LogInformation($"C# Blob trigger function Processed blob\n Name: {name} \n Data: {content}");
     }
+
+    
+    [Function(nameof(BlobTrigger2))]
+    public async Task BlobTrigger2([BlobTrigger("orders2/{name}.txt", Connection = "StorageAccount2")] Stream stream, string name)
+    {
+        using var blobStreamReader = new StreamReader(stream);
+        var content = await blobStreamReader.ReadToEndAsync();
+        _logger.LogInformation($"Second storage account processed blob\n Name: {name} \n Data: {content}");
+    }
 }

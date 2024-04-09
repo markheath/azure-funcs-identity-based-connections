@@ -4,6 +4,7 @@ $resourceGroupName = "mrh-funcs-identity"
 $location = "westeurope"
 $functionAppName = "mrh-funcs-identity-01"
 $storageAccountName = "mrhfuncsidentity01"
+$storageAccountName2 = "mrhfuncsidentity02" 
 $serviceBusNamespace = "mrhfuncsidentity01"
 
 az account set --subscription $subscription
@@ -11,8 +12,15 @@ az account set --subscription $subscription
 # Create a resource group
 az group create --name $resourceGroupName --location $location
 
-# Create a storage account
+# Create a storage account (used by the functions runtime)
 az storage account create --name $storageAccountName `
+    --resource-group $resourceGroupName `
+    --location $location `
+    --sku Standard_LRS `
+    --allow-blob-public-access false
+
+# Create the secondary storage account
+az storage account create --name $storageAccountName2 `
     --resource-group $resourceGroupName `
     --location $location `
     --sku Standard_LRS `
@@ -39,7 +47,10 @@ $principalId = az functionapp identity show `
 # Get the subscription ID of the current subscription
 # $subscriptionId = az account show --query id --output tsv
 
-$storageAccountId = az storage account show -n $storageAccountName -g $resourceGroupName --query id --output tsv
+$storageAccountId = az storage account show -n $storageAccountName `
+    -g $resourceGroupName --query id --output tsv
+
+
 
 # Grant managed identity access to the storage account
 az role assignment create `
@@ -69,6 +80,20 @@ az role assignment create `
     --assignee $principalId `
     --scope $storageAccountId
 
+# Grant managed identity access to the second storage account
+$storageAccountId2 = az storage account show -n $storageAccountName2 `
+    -g $resourceGroupName --query id --output tsv
+
+az role assignment create `
+    --role "Storage Blob Data Contributor" `
+    --assignee $principalId `
+    --scope $storageAccountId2
+
+az role assignment create `
+    --role "Storage Queue Data Contributor" `
+    --assignee $principalId `
+    --scope $storageAccountId2
+
 # Get rid of the connection string
 az functionapp config appsettings delete `
     --name $functionAppName `
@@ -80,6 +105,27 @@ az functionapp config appsettings set `
     --name $functionAppName `
     --resource-group $resourceGroupName `
     --settings AzureWebJobsStorage__accountName=${storageAccountName}
+
+# get the blob service URI for the second storage account
+$storageAccount2BlobServiceUri = az storage account show `
+    --name $storageAccountName2 `
+    --resource-group $resourceGroupName `
+    --query "primaryEndpoints.blob" `
+    --output tsv
+
+# get the queue service URI for the second storage account
+$storageAccount2QueueServiceUri = az storage account show `
+    --name $storageAccountName2 `
+    --resource-group $resourceGroupName `
+    --query "primaryEndpoints.queue" `
+    --output tsv
+
+# set up the second storage account for Azure Functions to use managed identities
+az functionapp config appsettings set `
+    --name $functionAppName `
+    --resource-group $resourceGroupName `
+    --settings StorageAccount2__blobServiceUri=${storageAccount2BlobServiceUri} `
+    StorageAccount2__queueServiceUri=${storageAccount2QueueServiceUri}
 
 # to see settings az functionapp config appsettings list -n $functionAppName -g $resourceGroupName
 
